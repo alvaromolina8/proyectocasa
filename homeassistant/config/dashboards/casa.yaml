@@ -1,0 +1,206 @@
+# Panel principal — se ve igual en el móvil, en la tablet y en el PC.
+#
+# CÓMO USARLO: los nombres de entidades de aquí abajo (light.salon,
+# camera.entrada...) son INVENTADOS, porque todavía no tienes dispositivos.
+# Según los vayas añadiendo, sustitúyelos por los reales. Los ves en
+# Herramientas para desarrolladores → Estados.
+#
+# Mientras no existan, las tarjetas salen en gris con "Entidad no
+# disponible". Es normal, no está roto.
+#
+# Se puede editar a ratón: en el panel, arriba a la derecha, el lápiz.
+# Ojo: al estar en modo YAML, los cambios hay que guardarlos en este archivo.
+
+title: Casa
+
+views:
+  # ══════════════════════════════════════════════════════════════════════
+  - title: Casa
+    path: casa
+    icon: mdi:sofa
+    type: sections
+    max_columns: 3
+
+    # Fila de estado de un vistazo, arriba del todo
+    badges:
+      - type: entity
+        entity: person.alvaro
+      - type: entity
+        entity: weather.forecast_casa
+      - type: entity
+        entity: sensor.salon_temperatura
+        color: red
+      - type: entity
+        entity: alarm_control_panel.casa
+
+    sections:
+      # ── Luces ────────────────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Luces
+            heading_style: title
+            icon: mdi:lightbulb-group
+
+          # La tarjeta "tile" es la que mejor queda: icono grande, se pulsa
+          # para encender, se mantiene pulsado para abrir los ajustes.
+          - type: tile
+            entity: light.salon
+            name: Salón
+            features:
+              - type: light-brightness
+
+          - type: tile
+            entity: light.cocina
+            name: Cocina
+            features:
+              - type: light-brightness
+
+          - type: tile
+            entity: light.dormitorio
+            name: Dormitorio
+            features:
+              - type: light-brightness
+
+      # ── Enchufes y clima ─────────────────────────────────────────────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Enchufes
+            heading_style: title
+            icon: mdi:power-socket-eu
+
+          - type: tile
+            entity: switch.enchufe_tele
+            name: Tele
+
+          - type: tile
+            entity: switch.enchufe_calefactor
+            name: Calefactor
+
+          - type: heading
+            heading: Clima
+            heading_style: title
+            icon: mdi:thermometer
+
+          - type: thermostat
+            entity: climate.salon
+
+      # ── Cámaras, en pequeño (las grandes van en su propia pestaña) ────
+      - type: grid
+        cards:
+          - type: heading
+            heading: Cámaras
+            heading_style: title
+            icon: mdi:cctv
+
+          - type: picture-entity
+            entity: camera.entrada
+            name: Entrada
+            camera_view: auto      # "auto" = imagen fija hasta que la pulsas
+            show_state: false
+
+          - type: heading
+            heading: Últimos avisos
+            heading_style: subtitle
+
+          # Historial de detecciones de persona de Frigate
+          - type: logbook
+            target:
+              entity_id:
+                - binary_sensor.entrada_person_occupancy
+            hours_to_show: 24
+
+  # ══════════════════════════════════════════════════════════════════════
+  - title: Cámaras
+    path: camaras
+    icon: mdi:cctv
+    type: sections
+    max_columns: 2
+
+    sections:
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: En directo
+            heading_style: title
+
+          # camera_view: live → vídeo continuo. Consume batería en el móvil,
+          # por eso en la pestaña "Casa" está en modo "auto".
+          - type: picture-entity
+            entity: camera.entrada
+            name: Entrada
+            camera_view: live
+            show_state: false
+
+          - type: picture-entity
+            entity: camera.taller
+            name: Taller (ESP32)
+            camera_view: live
+            show_state: false
+
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Grabaciones
+            heading_style: title
+            icon: mdi:movie-open
+
+          # Enlace directo a Frigate, que es donde se revisan los clips
+          # con su línea de tiempo. Cambia la IP por la de tu servidor.
+          - type: markdown
+            content: >
+              Los clips guardados se revisan en
+              **[Frigate](https://192.168.1.XXX:8971)** — tiene línea de
+              tiempo, filtro por persona y descarga de vídeos.
+
+  # ══════════════════════════════════════════════════════════════════════
+  - title: Servidor
+    path: servidor
+    icon: mdi:server
+    type: sections
+    max_columns: 2
+
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Salud del portátil
+            heading_style: title
+            icon: mdi:laptop
+
+          # Estos sensores aparecen al añadir la integración "System Monitor"
+          # (Ajustes → Dispositivos → Añadir integración → System Monitor).
+          - type: tile
+            entity: sensor.procesador_uso
+            name: CPU
+          - type: tile
+            entity: sensor.memoria_uso
+            name: RAM
+          - type: tile
+            entity: sensor.uso_disco_
+            name: Disco
+          - type: tile
+            entity: sensor.temperatura_procesador
+            name: Temperatura CPU
+
+          # La batería del portátil hace de SAI: aquí ves si hay corriente.
+          - type: tile
+            entity: sensor.bateria_portatil
+            name: Batería (SAI)
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Uso de CPU (24 h)
+            heading_style: title
+
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.procesador_uso
+                name: CPU
+              - entity: sensor.memoria_uso
+                name: RAM

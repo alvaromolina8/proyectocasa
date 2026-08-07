@@ -1,0 +1,38 @@
+# Configuración base de Home Assistant.
+# La mayoría de cosas se configuran desde la web, no aquí. Este archivo solo
+# activa lo que no tiene interfaz gráfica.
+
+# Trae de serie: interfaz web, historial, registro, descubrimiento de
+# dispositivos, copias de seguridad... No lo quites.
+default_config:
+
+homeassistant:
+  name: Casa
+  # Ajusta estos tres a los tuyos (los usa el sol, el clima y las gráficas)
+  latitude: 40.4168
+  longitude: -3.7038
+  elevation: 660
+  unit_system: metric
+  currency: EUR
+  country: ES
+  time_zone: Europe/Madrid
+
+# Permite instalar temas visuales (los de HACS se guardan en themes/)
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Dos paneles: el "Casa" viene definido en un archivo (el que te he
+# preparado), y además puedes crear los tuyos desde la web con el ratón.
+lovelace:
+  mode: storage
+  dashboards:
+    panel-casa:
+      mode: yaml
+      title: Casa
+      icon: mdi:home-heart
+      show_in_sidebar: true
+      filename: dashboards/casa.yaml

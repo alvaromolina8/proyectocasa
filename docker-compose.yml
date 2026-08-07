@@ -1,0 +1,123 @@
+# Servidor de casa — Home Assistant + cámaras + asistente de voz local
+#
+# Perfiles (para no arrancarlo todo a la vez en 8 GB de RAM):
+#   docker compose up -d                          → HA + MQTT (lo básico)
+#   docker compose --profile voz up -d            → + asistente de voz
+#   docker compose --profile camaras up -d        → + Frigate
+#   docker compose --profile esphome up -d        → + ESPHome (solo al programar)
+#   docker compose --profile todo up -d           → todo junto
+
+services:
+
+  # ─── El cerebro. Interfaz web en http://<ip-servidor>:8123 ──────────────
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    # host: necesario para que HA descubra dispositivos por mDNS/SSDP
+    # (Chromecast, Shelly, ESPHome...). Sin esto no los ve.
+    network_mode: host
+    privileged: true
+    volumes:
+      - ./homeassistant/config:/config
+      - /run/dbus:/run/dbus:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${TZ}
+
+  # ─── Broker MQTT: por aquí hablan los ESP32 y Frigate ──────────────────
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+      - /etc/localtime:/etc/localtime:ro
+
+  # ─── Programa y actualiza los ESP32 por WiFi. http://<ip>:6052 ─────────
+  # Compilar firmware consume ~2 GB de RAM y bastante CPU: arráncalo solo
+  # cuando vayas a tocar un dispositivo, y párale después.
+  esphome:
+    image: ghcr.io/esphome/esphome:stable
+    container_name: esphome
+    restart: unless-stopped
+    profiles: [esphome, todo]
+    network_mode: host
+    volumes:
+      - ./esphome/config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${TZ}
+
+  # ─── Grabación por movimiento + detección de personas ──────────────────
+  # UI en https://<ip>:8971  (la primera vez imprime la contraseña de admin
+  # en los logs: docker compose logs frigate | grep -i password)
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:stable
+    container_name: frigate
+    restart: unless-stopped
+    profiles: [camaras, todo]
+    shm_size: "256mb"          # súbelo si añades muchas cámaras
+    devices:
+      # Gráfica integrada (Radeon Vega del Ryzen): decodifica el vídeo por
+      # hardware en vez de a base de CPU.
+      - /dev/dri:/dev/dri
+    volumes:
+      - ./frigate/config:/config
+      - ${FRIGATE_MEDIA}:/media/frigate
+      - /etc/localtime:/etc/localtime:ro
+      # Los clips se escriben en RAM y se vuelcan a disco: alarga la vida
+      # del SSD del PC viejo.
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 1000000000
+    ports:
+      - "8971:8971"            # interfaz web con login
+      - "8554:8554"            # RTSP re-servido (para VLC, el móvil, etc.)
+      - "8555:8555/tcp"        # WebRTC
+      - "8555:8555/udp"
+    environment:
+      - TZ=${TZ}
+
+  # ─── Voz a texto (local, sin nube) ─────────────────────────────────────
+  whisper:
+    image: rhasspy/wyoming-whisper:latest
+    container_name: whisper
+    restart: unless-stopped
+    profiles: [voz, todo]
+    command: --model ${WHISPER_MODEL} --language es --beam-size 1
+    ports:
+      - "10300:10300"
+    volumes:
+      - ./whisper/data:/data
+      - /etc/localtime:/etc/localtime:ro
+
+  # ─── Texto a voz (local, sin nube) ─────────────────────────────────────
+  piper:
+    image: rhasspy/wyoming-piper:latest
+    container_name: piper
+    restart: unless-stopped
+    profiles: [voz, todo]
+    command: --voice ${PIPER_VOICE}
+    ports:
+      - "10200:10200"
+    volumes:
+      - ./piper/data:/data
+      - /etc/localtime:/etc/localtime:ro
+
+  # ─── Palabra de activación ("oye casa") ────────────────────────────────
+  openwakeword:
+    image: rhasspy/wyoming-openwakeword:latest
+    container_name: openwakeword
+    restart: unless-stopped
+    profiles: [voz, todo]
+    command: --preload-model ok_nabu
+    ports:
+      - "10400:10400"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro

@@ -1,0 +1,30 @@
+# Tema propio. Se elige en: tu perfil (abajo a la izquierda) → Tema → Casa.
+# Los colores en formato "R, G, B" son los que usa Home Assistant por dentro.
+
+Casa:
+  # ── Modo claro ──────────────────────────────────────────────────────
+  primary-color: "#3d7ea6"
+  accent-color: "#f2a65a"
+  app-header-background-color: "var(--primary-color)"
+  app-header-text-color: "#ffffff"
+  ha-card-border-radius: "14px"
+  ha-card-box-shadow: "0 2px 8px rgba(0,0,0,0.08)"
+
+  modes:
+    # ── Modo oscuro (el que se ve bien de noche en el móvil) ──────────
+    dark:
+      primary-color: "#5da9d6"
+      accent-color: "#f2a65a"
+      primary-background-color: "#15181c"
+      secondary-background-color: "#1d2126"
+      card-background-color: "#1d2126"
+      ha-card-background: "#1d2126"
+      primary-text-color: "#e8eaed"
+      secondary-text-color: "#9aa0a6"
+      divider-color: "#2c3238"
+      app-header-background-color: "#1d2126"
+      app-header-text-color: "#e8eaed"
+      state-icon-color: "#9aa0a6"
+      # Amarillo cálido para lo que está encendido: se lee de un vistazo
+      state-light-active-color: "#ffc046"
+      paper-item-icon-active-color: "#ffc046"

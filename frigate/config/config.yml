@@ -1,0 +1,96 @@
+# Frigate — grabación por movimiento y detección de personas.
+#
+# IMPORTANTE: Frigate no arranca si no hay ninguna cámara definida.
+# Descomenta uno de los dos ejemplos de abajo cuando tengas la primera.
+
+mqtt:
+  enabled: true
+  host: 192.168.1.XXX          # ← IP del servidor (no "mosquitto": Frigate
+  port: 1883                   #   está en red bridge, no ve ese nombre)
+  user: casa
+  password: TU_CONTRASEÑA_MQTT
+
+# Detector de objetos (quién es una persona y quién no).
+# Con un Ryzen 5 de 4 núcleos, el detector "cpu" aguanta bien 2-3 cámaras
+# a 5 fps. Cada cámara extra se come aproximadamente un núcleo.
+detectors:
+  cpu1:
+    type: cpu
+    num_threads: 3        # deja un núcleo libre para el resto de servicios
+
+# Decodificación de vídeo por hardware, en la gráfica integrada Radeon Vega
+# del Ryzen. Quita bastante trabajo a la CPU y es gratis.
+# Necesita que el compose pase /dev/dri al contenedor (ya lo hace).
+# Si Frigate no arranca, comenta estas dos líneas: no es imprescindible.
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+objects:
+  track:
+    - person          # añade "car", "dog", "cat"... según te interese
+  filters:
+    person:
+      min_score: 0.6
+      threshold: 0.75
+
+record:
+  enabled: true
+  retain:
+    days: 3           # grabación continua: solo 3 días para no llenar el disco
+    mode: motion
+  alerts:
+    retain:
+      days: 30        # los clips con persona detectada, un mes
+  detections:
+    retain:
+      days: 14
+
+snapshots:
+  enabled: true
+  retain:
+    default: 30
+
+# go2rtc va incluido en Frigate: recoge el vídeo UNA vez de cada cámara y
+# lo reparte a todo lo demás. Es lo que arregla el "un solo cliente a la
+# vez" de la ESP32-CAM.
+go2rtc:
+  streams: {}
+    # ── Cámara comercial con RTSP (recomendada para vigilar de verdad) ──
+    # Ejemplo TP-Link Tapo C110: activa "Cuenta de cámara" en la app.
+    # entrada:
+    #   - rtsp://usuario:clave@192.168.1.60:554/stream1
+
+    # ── ESP32-CAM con ESPHome ──────────────────────────────────────────
+    # Solo da MJPEG, así que hay que transcodificar a H.264 para grabar.
+    # Espera ~1 núcleo de CPU por cámara.
+    # taller:
+    #   - "ffmpeg:http://192.168.1.50/stream#video=h264#hardware"
+
+cameras: {}
+  # ── Cámara RTSP ──────────────────────────────────────────────────────
+  # entrada:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/entrada
+  #         input_args: preset-rtsp-restream
+  #         roles: [record, detect]
+  #   detect:
+  #     width: 1280
+  #     height: 720
+  #     fps: 5          # 5 fps basta para detectar personas y ahorra CPU
+  #   motion:
+  #     mask: []        # dibuja aquí zonas a ignorar (la calle, un árbol...)
+
+  # ── ESP32-CAM ────────────────────────────────────────────────────────
+  # taller:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/taller
+  #         input_args: preset-rtsp-restream
+  #         roles: [record, detect]
+  #   detect:
+  #     width: 640
+  #     height: 480
+  #     fps: 5
+
+version: 0.16-0

@@ -1,0 +1,82 @@
+# ESP32-CAM (placa AI-Thinker) — plantilla lista para usar.
+#
+# Cópiala una vez por cámara cambiando "name" y el nombre del archivo.
+# La primera vez hay que conectarla por USB-TTL; después se actualiza por WiFi.
+
+esphome:
+  name: camara-taller
+  friendly_name: Cámara taller
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # La ESP32-CAM tiene la antena justa: si está lejos del router, se cae.
+  power_save_mode: none
+  manual_ip:
+    static_ip: 192.168.1.50      # IP fija: Frigate necesita saber dónde está
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+
+logger:
+  level: INFO                     # DEBUG por serie satura y provoca cortes
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ── La cámara. Estos pines son los de la placa AI-Thinker; si compraste
+#    otra (M5Stack, TTGO, ESP32-S3-CAM) el pinout cambia.
+esp32_camera:
+  name: Taller
+  external_clock:
+    pin: GPIO0
+    frequency: 20MHz
+  i2c_pins:
+    sda: GPIO26
+    scl: GPIO27
+  data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+  vsync_pin: GPIO25
+  href_pin: GPIO23
+  pixel_clock_pin: GPIO22
+  power_down_pin: GPIO32
+  # 640x480 a 10 fps es el punto dulce. Subir de aquí hace que la placa
+  # se caliente, pierda WiFi y se reinicie sola.
+  resolution: 640x480
+  jpeg_quality: 10
+  max_framerate: 10 fps
+
+# Servidor MJPEG en http://192.168.1.50:8080/  → es lo que lee go2rtc.
+esp32_camera_web_server:
+  - port: 8080
+    mode: stream
+  - port: 8081
+    mode: snapshot
+
+# El flash blanco de la placa (NO es infrarrojo: de noche deslumbra y se ve
+# a quien esté delante, no sirve para vigilar a escondidas).
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: flash_output
+light:
+  - platform: monochromatic
+    output: flash_output
+    name: Flash taller
+
+# Reinicio automático si pierde el WiFi más de 15 min: la ESP32-CAM se
+# cuelga cada pocos días y esto evita tener que ir a desenchufarla.
+sensor:
+  - platform: uptime
+    name: Uptime taller
+  - platform: wifi_signal
+    name: WiFi taller
+    update_interval: 60s

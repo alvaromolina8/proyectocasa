@@ -1,0 +1,22 @@
+# Secretos — nunca deben salir de este PC
+.env
+mosquitto/config/passwd
+esphome/config/secrets.yaml
+
+# Datos generados en tiempo de ejecución
+mosquitto/data/
+mosquitto/log/
+whisper/data/
+piper/data/
+frigate/media/
+esphome/config/.esphome/
+esphome/config/.platformio/
+
+# Home Assistant: se conserva la configuración, no la base de datos ni los logs
+homeassistant/config/*
+!homeassistant/config/configuration.yaml
+!homeassistant/config/automations.yaml
+!homeassistant/config/scripts.yaml
+!homeassistant/config/scenes.yaml
+!homeassistant/config/themes/
+!homeassistant/config/dashboards/
