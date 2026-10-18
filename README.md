@@ -170,6 +170,18 @@ Para que responda a "oye casa" sin tocar nada, flashea el **Atom Echo** desde
 Home Assistant **ya es el frontend**: la misma interfaz se adapta sola al
 móvil, a la tablet y al navegador del PC. No hay que programar nada.
 
+#### Prototipo web local
+
+También hay una primera versión de una interfaz web independiente en
+`frontend/`. Sirve para probar el aspecto y la navegación desde este
+ordenador antes de conectar dispositivos: abre `frontend/index.html` en el
+navegador, sin instalar programas ni arrancar Docker.
+
+Este prototipo no controla dispositivos reales. Las luces, cámaras, sensores y
+consumos muestran datos simulados; sus controles solo cambian la vista en el
+navegador. El panel de Home Assistant descrito abajo sigue siendo la interfaz
+real del sistema. Más adelante se puede conectar el prototipo a Home Assistant.
+
 Te he dejado un panel preparado en
 `homeassistant/config/dashboards/casa.yaml`, con tres pestañas —  Casa,
 Cámaras y Servidor — y un tema propio con modo oscuro.
