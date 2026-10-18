@@ -173,9 +173,32 @@ móvil, a la tablet y al navegador del PC. No hay que programar nada.
 #### Prototipo web local
 
 También hay una primera versión de una interfaz web independiente en
-`frontend/`. Sirve para probar el aspecto y la navegación desde este
-ordenador antes de conectar dispositivos: abre `frontend/index.html` en el
-navegador, sin instalar programas ni arrancar Docker.
+`frontend/`. Sirve para probar el aspecto y la navegación antes de conectar
+dispositivos. Puedes abrir `frontend/index.html` directamente en el navegador
+o servirla en la red local para verla desde el móvil u otro ordenador.
+
+En Windows, abre PowerShell en la carpeta `frontend` y ejecuta:
+
+```powershell
+py -m http.server 8080 --bind 0.0.0.0
+```
+
+Si `py` no está disponible, instala Python 3 o usa el comando equivalente en
+Linux:
+
+```bash
+python3 -m http.server 8080 --bind 0.0.0.0
+```
+
+Deja esa ventana abierta. En el móvil o portátil, conectado a la misma Wi-Fi,
+abre `http://<ip-de-este-ordenador>:8080`; la IP local se puede consultar con
+`ipconfig` en Windows o `hostname -I` en Linux. Si Windows pregunta por el
+cortafuegos, permite el acceso solo en redes privadas. Si no conecta, comprueba
+que ambos equipos estén en la misma red y que el router no tenga activado el
+aislamiento de clientes. Para parar el servidor, pulsa `Ctrl+C`.
+
+Este servidor de prueba no tiene autenticación: úsalo solo en una red de
+confianza y no abras el puerto en el router hacia Internet.
 
 Este prototipo no controla dispositivos reales. Las luces, cámaras, sensores y
 consumos muestran datos simulados; sus controles solo cambian la vista en el
